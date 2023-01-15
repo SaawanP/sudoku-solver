@@ -2,7 +2,7 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from sudoku_solver.window import Window
+from sudoku_solver.ui import Window
 
 
 def create_ui():
