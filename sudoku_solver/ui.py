@@ -2,7 +2,7 @@ from PyQt6.QtCore import Qt, QLine
 from PyQt6.QtGui import QFont, QIntValidator, QPaintEvent, QPainter, QPen
 from PyQt6.QtWidgets import QWidget, QPushButton, QGridLayout, QHBoxLayout, QLineEdit
 
-from sudoku_solver.util import Cell, Location
+from sudoku_solver.cell import Cell, Location
 import sudoku_solver.solver as solver
 
 

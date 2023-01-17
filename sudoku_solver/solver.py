@@ -1,7 +1,7 @@
-from queue import Queue
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 
-from sudoku_solver.util import Cell, Location
+from sudoku_solver.cell import Cell, Location
+from sudoku_solver.patterns import Patterns
 
 
 def print_cycles(cells: Dict[Location, Cell]):
@@ -24,20 +24,39 @@ def print_cycles(cells: Dict[Location, Cell]):
             print(f"\t\tBox: {s}")
 
         response = input("Continue (y/n)")
+        while response in ["Y", "y", "N", "n"]:
+            response = input("Continue (y/n)")
         if response in ["N", "n"]:
             return
 
 
 def solve(cells: Dict[Location, Cell]):
     while True:
-        notification_queue = Queue()
-        for cell in cells.values():
-            new_action = cell.find_possible_action()
-            if new_action is not None:
-                notification_queue.put(new_action)
-        if len(notification_queue.queue) == 0:
+        values: Optional[List[int]] = None
+        affected_directions: Optional[Tuple[bool, bool, bool]] = None
+        for pattern in Patterns.get_all_patterns():
+            for cell in cells.values():
+                values, affected_directions = pattern(cell)
+                if values is not None:
+                    break
+        if values is None:
             break
-        notification = notification_queue.get()
+
+        # -1 in affected_directions means that coordinate does not matter
+        relevant_cycles = ["row_cycles", "col_cycles", "box_cycles"]
+        if affected_directions[0]:
+            relevant_cycles.remove("row_cycles")
+        if affected_directions[1]:
+            relevant_cycles.remove("col_cycles")
+        if affected_directions[2]:
+            relevant_cycles.remove("box_cycles")
+
+        cell = cells[affected_directions]
+        for cycle in relevant_cycles:
+            for val in values:
+                linked_cells: List[Cell] = cell.__getattribute__(cycle)[val]
+                for linked_cell in linked_cells:
+                    linked_cell.remove_option(val)
 
     print("Complete")
 

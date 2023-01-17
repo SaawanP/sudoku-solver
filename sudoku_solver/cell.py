@@ -1,9 +1,7 @@
 import copy
-from inspect import ismethod
 from typing import Dict, List, NamedTuple, Optional
 
 Location = NamedTuple("Location", [("row", int), ("col", int), ("box", int)])
-Notification = NamedTuple("Notification", [("location", Location), ("values", List[int])])
 
 
 class Cell:
@@ -44,23 +42,3 @@ class Cell:
             cells = copy.copy(cells)
             for cell in cells:
                 cell.remove_option(value)
-
-    def find_possible_action(self) -> Optional[Notification]:
-        for func in Patterns.get_all_patterns():
-            a = func(self)
-            if a is not None:
-                return Notification(self.location, a)
-
-
-class Patterns:
-    @staticmethod
-    def get_all_patterns():
-        return (getattr(Patterns, i) for i in dir(Patterns) if not i.startswith("__") and i != "get_all_patterns")
-
-    @staticmethod
-    def naked_single(cell: Cell) -> Optional[List[int]]:
-        return None
-
-    @staticmethod
-    def hidden_single(cell: Cell) -> Optional[List[int]]:
-        return None
