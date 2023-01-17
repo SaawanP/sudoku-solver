@@ -2,51 +2,8 @@ from PyQt6.QtCore import Qt, QLine
 from PyQt6.QtGui import QFont, QIntValidator, QPaintEvent, QPainter, QPen
 from PyQt6.QtWidgets import QWidget, QPushButton, QGridLayout, QHBoxLayout, QLineEdit
 
-from sudoku_solver.cell import Cell, Location
-from sudoku_solver.solver import Solver
-
-
-class Window(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        self.setWindowTitle("Sudoku Solver")
-        self.setFixedSize(1000, 900)
-
-        hlayout = QHBoxLayout()
-        grid = QGridLayout()
-        grid.setVerticalSpacing(0)
-        grid.setHorizontalSpacing(0)
-
-        self.start_button = QPushButton("Start Solving")
-        self.start_button.clicked.connect(self.start_solve)
-
-        hlayout.addLayout(grid, 9)
-        hlayout.addWidget(self.start_button, 1)
-        self.setLayout(hlayout)
-        self.text_boxes = []
-        for row in range(9):
-            for col in range(9):
-                text_box = LineEdit(row, col)
-                text_box.setMinimumHeight(100)
-                text_box.resize(100, 100)
-                grid.addWidget(text_box, row, col)
-                self.text_boxes.append(text_box)
-
-    def start_solve(self):
-        cells = {}
-        for text_box in self.text_boxes:
-            cell = Cell()
-            if text_box.text() != "":
-                text_box.given = True
-                cell.options = [int(text_box.text())]
-            box = text_box.row // 3 + text_box.col // 3
-            location = Location(text_box.row, text_box.col, box)
-            cell.location = (text_box.row, text_box.col, box)
-            cells[location] = cell
-        self.start_button.setDisabled(True)
-        solver = Solver(cells)
-        solver.solve()
+from sudoku_solver.util import Cell, Location
+import sudoku_solver.solver as solver
 
 
 class LineEdit(QLineEdit):
@@ -95,3 +52,49 @@ class LineEdit(QLineEdit):
             line = QLine(rect.topRight(), rect.bottomRight())
             painter.drawLine(line)
         painter.end()
+
+
+class Window(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Sudoku Solver")
+        self.setFixedSize(1000, 900)
+
+        hlayout = QHBoxLayout()
+        grid = QGridLayout()
+        grid.setVerticalSpacing(0)
+        grid.setHorizontalSpacing(0)
+
+        self.start_button = QPushButton("Start Solving")
+        self.start_button.clicked.connect(self.start_solve)
+
+        hlayout.addLayout(grid, 9)
+        hlayout.addWidget(self.start_button, 1)
+        self.setLayout(hlayout)
+        self.text_boxes = []
+        for row in range(9):
+            for col in range(9):
+                text_box = LineEdit(row, col)
+                text_box.setMinimumHeight(100)
+                text_box.resize(100, 100)
+                grid.addWidget(text_box, row, col)
+                self.text_boxes.append(text_box)
+
+    def start_solve(self):
+        cells = {}
+        first_cells = []
+        for text_box in self.text_boxes:
+            cell = Cell()
+            box = text_box.row // 3 * 3 + text_box.col // 3
+            location = Location(text_box.row, text_box.col, box)
+            cell.location = location
+            if text_box.text() != "":
+                text_box.given = True
+                cell.options = {int(text_box.text())}
+                first_cells.append(cell)
+            cells[location] = cell
+        self.start_button.setDisabled(True)
+        solver.create_cycles(cells, first_cells)
+        solver.solve(cells)
+        self.close()
