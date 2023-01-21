@@ -1,3 +1,6 @@
+import os
+from typing import Dict
+
 from PyQt6.QtCore import Qt, QLine
 from PyQt6.QtGui import QFont, QIntValidator, QPaintEvent, QPainter, QPen
 from PyQt6.QtWidgets import QWidget, QPushButton, QGridLayout, QHBoxLayout, QLineEdit
@@ -11,7 +14,6 @@ class LineEdit(QLineEdit):
         super().__init__()
         self.row = row
         self.col = col
-        self.given = False
 
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setFont(QFont("Arial", 20))
@@ -22,29 +24,29 @@ class LineEdit(QLineEdit):
         super().paintEvent(a0)
         painter = QPainter()
         painter.begin(self)
-        thin_line = 2
-        thick_line = 6
-        painter.setPen(QPen(Qt.GlobalColor.black, thin_line, Qt.PenStyle.SolidLine))
+        thin_line = QPen(Qt.GlobalColor.black, 2, Qt.PenStyle.SolidLine)
+        thick_line = QPen(Qt.GlobalColor.black, 6, Qt.PenStyle.SolidLine)
+        painter.setPen(thin_line)
 
         rect = self.rect()
 
         line = QLine(rect.topLeft(), rect.topRight())
         if self.row % 3 == 0:
-            painter.setPen(QPen(Qt.GlobalColor.black, thick_line, Qt.PenStyle.SolidLine))
+            painter.setPen(thick_line)
             painter.drawLine(line)
-            painter.setPen(QPen(Qt.GlobalColor.black, thin_line, Qt.PenStyle.SolidLine))
+            painter.setPen(thin_line)
         else:
             painter.drawLine(line)
 
         line = QLine(rect.topLeft(), rect.bottomLeft())
         if self.col % 3 == 0:
-            painter.setPen(QPen(Qt.GlobalColor.black, thick_line, Qt.PenStyle.SolidLine))
+            painter.setPen(thick_line)
             painter.drawLine(line)
-            painter.setPen(QPen(Qt.GlobalColor.black, thin_line, Qt.PenStyle.SolidLine))
+            painter.setPen(thin_line)
         else:
             painter.drawLine(line)
 
-        painter.setPen(QPen(Qt.GlobalColor.black, thick_line, Qt.PenStyle.SolidLine))
+        painter.setPen(thick_line)
         if self.row == 8:
             line = QLine(rect.bottomLeft(), rect.bottomRight())
             painter.drawLine(line)
@@ -72,22 +74,46 @@ class Window(QWidget):
         hlayout.addLayout(grid, 9)
         hlayout.addWidget(self.start_button, 1)
         self.setLayout(hlayout)
-        self.text_boxes = []
+        self.text_boxes: Dict[Location, LineEdit] = {}
         for row in range(9):
             for col in range(9):
                 text_box = LineEdit(row, col)
                 text_box.setMinimumHeight(100)
                 text_box.resize(100, 100)
                 grid.addWidget(text_box, row, col)
-                self.text_boxes.append(text_box)
+                box = row // 3 * 3 + col // 3
+                location = Location(row, col, box)
+                self.text_boxes[location] = text_box
+
+        if os.path.exists("file.txt"):
+            with open("file.txt", "r") as f:
+                for row, rows in enumerate(f.readlines()):
+                    for col, digit in enumerate(rows):
+                        if digit not in [" ", "\n"]:
+                            box = int(row) // 3 * 3 + int(col) // 3
+                            self.text_boxes[(int(row), int(col), box)].setText(digit)
+
+    def create_file(self):
+        with open("file.txt", "w") as f:
+            for row in range(9):
+                text_row = ""
+                for col in range(9):
+                    box = row // 3 * 3 + col // 3
+                    text_box = self.text_boxes[(row, col, box)]
+                    text = text_box.text()
+                    if text == "":
+                        text = " "
+                    text_row += text
+                f.writelines(text_row)
+                f.write("\n")
 
     def start_solve(self):
+        self.create_file()
+
         cells = {}
         first_cells = []
-        for text_box in self.text_boxes:
+        for location, text_box in self.text_boxes.items():
             cell = Cell()
-            box = text_box.row // 3 * 3 + text_box.col // 3
-            location = Location(text_box.row, text_box.col, box)
             cell.location = location
             if text_box.text() != "":
                 text_box.given = True
@@ -96,5 +122,5 @@ class Window(QWidget):
             cells[location] = cell
         self.start_button.setDisabled(True)
         solver.create_cycles(cells, first_cells)
-        solver.solve(cells)
-        self.close()
+        for cell in solver.solve(cells):
+            self.text_boxes[cell.location].setText(f"{list(cell.options)[0]}")

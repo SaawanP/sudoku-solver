@@ -1,7 +1,7 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Set
 
 from sudoku_solver.cell import Cell, Location
-from sudoku_solver.patterns import Patterns
+from sudoku_solver.patterns import get_all_patterns
 
 
 def print_cycles(cells: Dict[Location, Cell]):
@@ -34,29 +34,48 @@ def solve(cells: Dict[Location, Cell]):
     while True:
         values: Optional[List[int]] = None
         affected_directions: Optional[Tuple[bool, bool, bool]] = None
-        for pattern in Patterns.get_all_patterns():
+        location: Optional[Location] = None
+        involved_cells: List[Cell] = []
+
+        # apply the different sudoku patterns to the cells and does them in increasing difficulty
+        for pattern in get_all_patterns():
             for cell in cells.values():
-                values, affected_directions = pattern(cell)
-                if values is not None:
-                    break
+                # print(cell.location, cell.completed, pattern)
+                if not cell.completed:
+                    values, affected_directions, involved_cells = pattern(cell)
+                    if values is not None:
+                        print(values)
+                        location = cell.location
+                        break
+            else:
+                continue
+            break
         if values is None:
+            print("hi")
             break
 
         # -1 in affected_directions means that coordinate does not matter
         relevant_cycles = ["row_cycles", "col_cycles", "box_cycles"]
-        if affected_directions[0]:
+        if not affected_directions[0]:
             relevant_cycles.remove("row_cycles")
-        if affected_directions[1]:
+        if not affected_directions[1]:
             relevant_cycles.remove("col_cycles")
-        if affected_directions[2]:
+        if not affected_directions[2]:
             relevant_cycles.remove("box_cycles")
+        # TODO might need to remove all other options in involved cells
+        linked_cells: List[Set[Cell]] = [set(), set(), set()]
+        for i, cycle in enumerate(relevant_cycles):
+            for cell in involved_cells:
+                cell.completed = True
+                for val in values:
+                    for linked_cell in cell.__getattribute__(cycle)[val]:
+                        if linked_cell not in linked_cells[i] and linked_cell not in involved_cells:
+                            linked_cells[i].add(linked_cell)
+                    for linked_cell in linked_cells[i]:
+                        linked_cell.remove_option(val)
+        print("yielding")
+        yield involved_cells[0]
 
-        cell = cells[affected_directions]
-        for cycle in relevant_cycles:
-            for val in values:
-                linked_cells: List[Cell] = cell.__getattribute__(cycle)[val]
-                for linked_cell in linked_cells:
-                    linked_cell.remove_option(val)
 
     print("Complete")
 

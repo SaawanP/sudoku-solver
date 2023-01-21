@@ -7,6 +7,7 @@ Location = NamedTuple("Location", [("row", int), ("col", int), ("box", int)])
 class Cell:
     def __init__(self):
         self.options = {i for i in range(1, 10)}
+        self.completed = False
         self.location: Location = (0, 0, 0)
         self.row_cycles: Dict[int, List[Cell]] = {}
         self.col_cycles: Dict[int, List[Cell]] = {}
@@ -28,17 +29,10 @@ class Cell:
         self.options.remove(value)
 
     def complete_cell(self, value: int):
-        for cells in self.row_cycles.values():
-            cells = copy.copy(cells)
-            for cell in cells:
-                cell.remove_option(value)
+        for attr in ["row_cycles", "col_cycles", "box_cycles"]:
+            for cells in self.__getattribute__(attr).values():
+                cells = copy.copy(cells)
+                for cell in cells:
+                    cell.remove_option(value)
 
-        for cells in self.col_cycles.values():
-            cells = copy.copy(cells)
-            for cell in cells:
-                cell.remove_option(value)
-
-        for cells in self.box_cycles.values():
-            cells = copy.copy(cells)
-            for cell in cells:
-                cell.remove_option(value)
+        # self.completed = True
