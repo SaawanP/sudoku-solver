@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple
 
 Location = NamedTuple("Location", [("row", int), ("col", int), ("box", int)])
 
@@ -35,4 +35,4 @@ class Cell:
                 for cell in cells:
                     cell.remove_option(value)
 
-        # self.completed = True
+        self.completed = True

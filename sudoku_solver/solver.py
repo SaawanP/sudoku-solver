@@ -30,11 +30,12 @@ def print_cycles(cells: Dict[Location, Cell]):
             return
 
 
-def solve(cells: Dict[Location, Cell]):
+def solve(cells: Dict[Location, Cell]) -> Tuple[List[Cell], str]:
     while True:
         values: Optional[List[int]] = None
         affected_directions: Optional[Tuple[bool, bool, bool]] = None
         location: Optional[Location] = None
+        function_text: str = ""
         involved_cells: List[Cell] = []
 
         # apply the different sudoku patterns to the cells and does them in increasing difficulty
@@ -42,16 +43,14 @@ def solve(cells: Dict[Location, Cell]):
             for cell in cells.values():
                 # print(cell.location, cell.completed, pattern)
                 if not cell.completed:
-                    values, affected_directions, involved_cells = pattern(cell)
+                    values, affected_directions, involved_cells, function_text = pattern(cell)
                     if values is not None:
-                        print(values)
                         location = cell.location
                         break
             else:
                 continue
             break
         if values is None:
-            print("hi")
             break
 
         # -1 in affected_directions means that coordinate does not matter
@@ -73,8 +72,7 @@ def solve(cells: Dict[Location, Cell]):
                             linked_cells[i].add(linked_cell)
                     for linked_cell in linked_cells[i]:
                         linked_cell.remove_option(val)
-        print("yielding")
-        yield involved_cells[0]
+        yield involved_cells, function_text
 
 
     print("Complete")

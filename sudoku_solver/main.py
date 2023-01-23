@@ -1,5 +1,3 @@
-import sys
-
 from PyQt6.QtWidgets import QApplication
 
 from sudoku_solver.ui import Window
@@ -17,7 +15,7 @@ if __name__ == "__main__":
     app = QApplication([])
     window = Window()
     window.show()
-    sys.exit(app.exec())
+    app.exec()
 
 
 
