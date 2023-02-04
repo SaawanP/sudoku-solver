@@ -81,7 +81,6 @@ class Window(QWidget):
         super().__init__()
 
         self.setWindowTitle("Sudoku Solver")
-        self.setFixedSize(1200, 900)
         self.last_cell_location = None
 
         hlayout = QHBoxLayout()
