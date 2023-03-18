@@ -81,7 +81,8 @@ class Window(QWidget):
         super().__init__()
 
         self.setWindowTitle("Sudoku Solver")
-        self.last_cell_location = None
+        self.last_cells = None
+        self.move(100, 50)
 
         hlayout = QHBoxLayout()
         vlayout = QVBoxLayout()
@@ -112,6 +113,7 @@ class Window(QWidget):
         self.setLayout(hlayout)
 
         self.text_boxes: Dict[Location, LineEdit] = {}
+        self.cells: Dict[Location, Cell] = {}
         for row in range(9):
             for col in range(9):
                 text_box = LineEdit(row, col)
@@ -122,8 +124,8 @@ class Window(QWidget):
                 location = Location(row, col, box)
                 self.text_boxes[location] = text_box
 
-        if os.path.exists("examples/simple.txt"):
-            with open("examples/simple.txt", "r") as f:
+        if os.path.exists("examples/intermediate.txt"):
+            with open("examples/intermediate.txt", "r") as f:
                 for row, rows in enumerate(f.readlines()):
                     for col, digit in enumerate(rows):
                         if digit not in [" ", "\n"]:
@@ -131,8 +133,9 @@ class Window(QWidget):
                             self.text_boxes[(int(row), int(col), box)].setText(digit)
 
     def next_step(self):
-        if self.last_cell_location:
-            self.text_boxes[self.last_cell_location].active = False
+        if self.last_cells:
+            for cell in self.last_cells:
+                self.text_boxes[cell.location].active = False
         try:
             cells, text = next(self.solve_path)
             for cell in cells:
@@ -143,12 +146,14 @@ class Window(QWidget):
                 self.text_boxes[cell.location].options = cell.options
                 self.text_boxes[cell.location].active = True
                 self.text_boxes[cell.location].setDisabled(True)
-                self.last_cell_location = cell.location
+            self.last_cells = cells
         except StopIteration:
+            # TODO create a checker to check if complete or unsolvable
+            solver.check_complete(self.cells[Location(0, 0, 0)])
             self.display_text.setText("Puzzle has been completed")
 
     def create_file(self):
-        with open("examples/simple.txt", "w") as f:
+        with open("examples/intermediate.txt", "w") as f:
             for row in range(9):
                 text_row = ""
                 for col in range(9):
@@ -164,7 +169,6 @@ class Window(QWidget):
     def start_solve(self):
         self.create_file()
 
-        cells = {}
         first_cells = []
         for location, text_box in self.text_boxes.items():
             cell = Cell()
@@ -176,9 +180,9 @@ class Window(QWidget):
                 text_box.complete = True
             else:
                 text_box.given = False
-            cells[location] = cell
+            self.cells[location] = cell
             text_box.options = cell.options
         self.start_button.setDisabled(True)
-        solver.create_cycles(cells, first_cells)
-        self.solve_path = (solver.solve(cells))
+        solver.create_cycles(self.cells, first_cells)
+        self.solve_path = (solver.solve(self.cells))
         self.next_button.setDisabled(False)
